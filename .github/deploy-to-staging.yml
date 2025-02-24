@@ -1,0 +1,48 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Trigger tests
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push request events but only for the "staging" branch
+  push:
+    branches: [ "staging" ]
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "deploy-deploy-env"
+  deploy-deploy-env:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v4
+
+      # Dummy scripts
+      - name: setup infra
+        run: echo "infrastructure setup"
+
+      - name: build application
+        run: echo "app build"
+
+      - name: deploy application
+        run: echo "app deployed"
+
+  notify:
+    runs-on: latest
+    name: Notify test repos that deployemnt is completed in develop env and they can run their tests
+    needs: deploy-deploy-env
+    strategy:
+      matrix:
+        repos: ['ravs788/TestRepo']
+    steps:
+      - name: Dispatch event to repository
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrests.REPO_ACCESS_TOKEN_TO_TRIGGER_EVENTS }}
+          repository: ${{ matrix.repos }}
+          event-type: deployment-compleetd-notification-event
+          client-payload: '{"github":${{ toJson(github }}, "TEST_ENV":"STAGING","TAG":"${{ github.event.repository.name }}"}'
